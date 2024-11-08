@@ -7,6 +7,7 @@ import (
 	"crypto/sha512"
 	"encoding/hex"
 	"errors"
+	"golang.org/x/exp/rand"
 	"hash"
 	"image"
 	"io"
@@ -38,34 +39,37 @@ var (
 // FileInfo describes a file.
 type FileInfo struct {
 	*Listing
-	Fs         afero.Fs          `json:"-"`
-	Path       string            `json:"path"`
-	Name       string            `json:"name"`
-	Size       int64             `json:"size"`
-	Extension  string            `json:"extension"`
-	ModTime    time.Time         `json:"modified"`
-	Mode       os.FileMode       `json:"mode"`
-	IsDir      bool              `json:"isDir"`
-	IsSymlink  bool              `json:"isSymlink"`
-	Type       string            `json:"type"`
-	Subtitles  []string          `json:"subtitles,omitempty"`
-	Content    string            `json:"content,omitempty"`
-	Checksums  map[string]string `json:"checksums,omitempty"`
-	Token      string            `json:"token,omitempty"`
-	currentDir []os.FileInfo     `json:"-"`
-	Resolution *ImageResolution  `json:"resolution,omitempty"`
+	Fs             afero.Fs          `json:"-"`
+	Path           string            `json:"path"`
+	Name           string            `json:"name"`
+	Size           int64             `json:"size"`
+	Extension      string            `json:"extension"`
+	ModTime        time.Time         `json:"modified"`
+	Mode           os.FileMode       `json:"mode"`
+	IsDir          bool              `json:"isDir"`
+	IsSymlink      bool              `json:"isSymlink"`
+	Type           string            `json:"type"`
+	Subtitles      []string          `json:"subtitles,omitempty"`
+	Content        string            `json:"content,omitempty"`
+	Checksums      map[string]string `json:"checksums,omitempty"`
+	Token          string            `json:"token,omitempty"`
+	currentDir     []os.FileInfo     `json:"-"`
+	Resolution     *ImageResolution  `json:"resolution,omitempty"`
+	Random         uint32            `json:"random"`
+	IncludeSubDirs bool              `json:"includesubdirs"`
 }
 
 // FileOptions are the options when getting a file info.
 type FileOptions struct {
-	Fs         afero.Fs
-	Path       string
-	Modify     bool
-	Expand     bool
-	ReadHeader bool
-	Token      string
-	Checker    rules.Checker
-	Content    bool
+	Fs             afero.Fs
+	Path           string
+	Modify         bool
+	Expand         bool
+	ReadHeader     bool
+	Token          string
+	Checker        rules.Checker
+	Content        bool
+	IncludeSubDirs bool
 }
 
 type ImageResolution struct {
@@ -112,16 +116,17 @@ func stat(opts *FileOptions) (*FileInfo, error) {
 			return nil, err
 		}
 		file = &FileInfo{
-			Fs:        opts.Fs,
-			Path:      opts.Path,
-			Name:      info.Name(),
-			ModTime:   info.ModTime(),
-			Mode:      info.Mode(),
-			IsDir:     info.IsDir(),
-			IsSymlink: IsSymlink(info.Mode()),
-			Size:      info.Size(),
-			Extension: filepath.Ext(info.Name()),
-			Token:     opts.Token,
+			Fs:             opts.Fs,
+			Path:           opts.Path,
+			Name:           info.Name(),
+			ModTime:        info.ModTime(),
+			Mode:           info.Mode(),
+			IsDir:          info.IsDir(),
+			IsSymlink:      IsSymlink(info.Mode()),
+			Size:           info.Size(),
+			Extension:      filepath.Ext(info.Name()),
+			Token:          opts.Token,
+			IncludeSubDirs: opts.IncludeSubDirs,
 		}
 	}
 
@@ -388,11 +393,8 @@ func (i *FileInfo) addSubtitle(fPath string) {
 }
 
 func (i *FileInfo) readListing(checker rules.Checker, readHeader bool) error {
+
 	afs := &afero.Afero{Fs: i.Fs}
-	dir, err := afs.ReadDir(i.Path)
-	if err != nil {
-		return err
-	}
 
 	listing := &Listing{
 		Items:    []*FileInfo{},
@@ -400,67 +402,135 @@ func (i *FileInfo) readListing(checker rules.Checker, readHeader bool) error {
 		NumFiles: 0,
 	}
 
+	// If IncludeSubDirs is true, call the recursive listing function
+	if i.IncludeSubDirs {
+		log.Println("RECURSIVE DIR")
+
+		err := i.readAllFilesRecursive(i.Path, checker, readHeader, listing)
+		if err != nil {
+			return err
+		}
+	} else {
+		log.Println("NOT RECURSIVE DIR")
+
+		dir, err := afs.ReadDir(i.Path)
+		if err != nil {
+			return err
+		}
+
+		for _, f := range dir {
+			name := f.Name()
+			fPath := path.Join(i.Path, name)
+
+			if !checker.Check(fPath) {
+				continue
+			}
+
+			isSymlink, isInvalidLink := false, false
+			if IsSymlink(f.Mode()) {
+				isSymlink = true
+				// It's a symbolic link. We try to follow it. If it doesn't work,
+				// we stay with the link information instead of the target's.
+				info, err := i.Fs.Stat(fPath)
+				if err == nil {
+					f = info
+				} else {
+					isInvalidLink = true
+				}
+			}
+
+			file := &FileInfo{
+				Fs:         i.Fs,
+				Name:       name,
+				Size:       f.Size(),
+				ModTime:    f.ModTime(),
+				Mode:       f.Mode(),
+				IsDir:      f.IsDir(),
+				IsSymlink:  isSymlink,
+				Extension:  filepath.Ext(name),
+				Path:       fPath,
+				currentDir: dir,
+				Random:     rand.Uint32(),
+			}
+
+			if !file.IsDir && strings.HasPrefix(mime.TypeByExtension(file.Extension), "image/") {
+				resolution, err := calculateImageResolution(file.Fs, file.Path)
+				if err != nil {
+					log.Printf("Error calculating resolution for image %s: %v", file.Path, err)
+				} else {
+					file.Resolution = resolution
+				}
+			}
+
+			if file.IsDir {
+				listing.NumDirs++
+			} else {
+				listing.NumFiles++
+
+				if isInvalidLink {
+					file.Type = "invalid_link"
+				} else {
+					err := file.detectType(true, false, readHeader)
+					if err != nil {
+						return err
+					}
+				}
+			}
+
+			listing.Items = append(listing.Items, file)
+		}
+	}
+
+	i.Listing = listing
+	return nil
+}
+
+// readAllFilesRecursive recursively lists all files in the directory and subdirectories
+func (i *FileInfo) readAllFilesRecursive(dirPath string, checker rules.Checker, readHeader bool, listing *Listing) error {
+	afs := &afero.Afero{Fs: i.Fs}
+	dir, err := afs.ReadDir(dirPath)
+	if err != nil {
+		return err
+	}
+
 	for _, f := range dir {
-		name := f.Name()
-		fPath := path.Join(i.Path, name)
+		fPath := path.Join(dirPath, f.Name())
 
 		if !checker.Check(fPath) {
 			continue
 		}
 
-		isSymlink, isInvalidLink := false, false
-		if IsSymlink(f.Mode()) {
-			isSymlink = true
-			// It's a symbolic link. We try to follow it. If it doesn't work,
-			// we stay with the link information instead of the target's.
-			info, err := i.Fs.Stat(fPath)
-			if err == nil {
-				f = info
-			} else {
-				isInvalidLink = true
-			}
-		}
-
-		file := &FileInfo{
-			Fs:         i.Fs,
-			Name:       name,
-			Size:       f.Size(),
-			ModTime:    f.ModTime(),
-			Mode:       f.Mode(),
-			IsDir:      f.IsDir(),
-			IsSymlink:  isSymlink,
-			Extension:  filepath.Ext(name),
-			Path:       fPath,
-			currentDir: dir,
-		}
-
-		if !file.IsDir && strings.HasPrefix(mime.TypeByExtension(file.Extension), "image/") {
-			resolution, err := calculateImageResolution(file.Fs, file.Path)
-			if err != nil {
-				log.Printf("Error calculating resolution for image %s: %v", file.Path, err)
-			} else {
-				file.Resolution = resolution
-			}
-		}
-
-		if file.IsDir {
-			listing.NumDirs++
-		} else {
-			listing.NumFiles++
-
-			if isInvalidLink {
-				file.Type = "invalid_link"
-			} else {
-				err := file.detectType(true, false, readHeader)
+		if f.IsDir() {
+			// Recursively list files in the subdirectory
+			if !strings.HasPrefix(f.Name(), ".") {
+				err := i.readAllFilesRecursive(fPath, checker, readHeader, listing)
 				if err != nil {
 					return err
 				}
 			}
-		}
+		} else {
+			// It's a file, add it to the listing
+			file := &FileInfo{
+				Fs:        i.Fs,
+				Name:      f.Name(),
+				Size:      f.Size(),
+				ModTime:   f.ModTime(),
+				Mode:      f.Mode(),
+				IsDir:     f.IsDir(),
+				Extension: filepath.Ext(f.Name()),
+				Path:      fPath,
+				Random:    rand.Uint32(),
+			}
 
-		listing.Items = append(listing.Items, file)
+			listing.NumFiles++
+			err := file.detectType(true, false, readHeader)
+			if err != nil {
+				return err
+			}
+
+			listing.Items = append(listing.Items, file)
+		}
 	}
 
-	i.Listing = listing
 	return nil
 }

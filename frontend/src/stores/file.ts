@@ -9,6 +9,7 @@ export const useFileStore = defineStore("file", {
     selected: number[];
     multiple: boolean;
     isFiles: boolean;
+    includeSubDirs: boolean;
   } => ({
     req: null,
     oldReq: null,
@@ -16,6 +17,7 @@ export const useFileStore = defineStore("file", {
     selected: [],
     multiple: false,
     isFiles: false,
+    includeSubDirs: false,
   }),
   getters: {
     selectedCount: (state) => state.selected.length,

@@ -13,6 +13,7 @@ interface IUser {
   dateFormat: boolean;
   viewMode: ViewModeType;
   sorting?: Sorting;
+  includeSubDirs?: boolean;
 }
 
 type ViewModeType = "list" | "mosaic" | "mosaic gallery";

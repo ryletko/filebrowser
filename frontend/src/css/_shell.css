@@ -10,7 +10,7 @@
   transition: 0.2s ease background;
   cursor: ns-resize;
   touch-action: none;
-  user-select: none;
+  /*user-select: none;*/
   width: 100%;
 }
 
@@ -32,6 +32,7 @@
   cursor: text;
   box-shadow: 0 0 5px var(--borderPrimary);
   transition: 0.2s ease transform;
+  font-size: 11px;
 }
 
 .shell__overlay {
@@ -49,6 +50,7 @@ body.rtl .shell-content {
 }
 
 .shell__result {
+  min-height: 50px;
   display: flex;
   padding: 0.5em;
   align-items: flex-start;

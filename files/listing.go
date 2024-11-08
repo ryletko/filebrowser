@@ -28,6 +28,8 @@ func (l Listing) ApplySort() {
 			sort.Sort(sort.Reverse(bySize(l)))
 		case "modified":
 			sort.Sort(sort.Reverse(byModified(l)))
+		case "random":
+			sort.Sort(sort.Reverse(byRandom(l)))
 		default:
 			// If not one of the above, do nothing
 			return
@@ -40,6 +42,8 @@ func (l Listing) ApplySort() {
 			sort.Sort(bySize(l))
 		case "modified":
 			sort.Sort(byModified(l))
+		case "random":
+			sort.Sort(byRandom(l))
 		default:
 			sort.Sort(byName(l))
 			return
@@ -51,6 +55,7 @@ func (l Listing) ApplySort() {
 type byName Listing
 type bySize Listing
 type byModified Listing
+type byRandom Listing
 
 // By Name
 func (l byName) Len() int {
@@ -107,4 +112,18 @@ func (l byModified) Swap(i, j int) {
 func (l byModified) Less(i, j int) bool {
 	iModified, jModified := l.Items[i].ModTime, l.Items[j].ModTime
 	return iModified.Sub(jModified) < 0
+}
+
+// By Random
+func (l byRandom) Len() int {
+	return len(l.Items)
+}
+
+func (l byRandom) Swap(i, j int) {
+	l.Items[i], l.Items[j] = l.Items[j], l.Items[i]
+}
+
+func (l byRandom) Less(i, j int) bool {
+	iModified, jModified := l.Items[i].Random, l.Items[j].Random
+	return iModified < jModified
 }

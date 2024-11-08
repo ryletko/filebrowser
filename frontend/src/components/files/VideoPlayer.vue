@@ -36,7 +36,8 @@ const props = withDefaults(
     options?: any;
   }>(),
   {
-    options: {},
+    options: {
+    }
   }
 );
 
@@ -79,6 +80,10 @@ const initVideoPlayer = async () => {
     // TODO: need to test on mobile
     // @ts-ignore
     player.value!.mobileUi();
+    player.value!.ready(() => {
+      player.value!.play();
+    });
+
   } catch (error) {
     console.error("Error initializing video player:", error);
   }
@@ -86,6 +91,9 @@ const initVideoPlayer = async () => {
 
 const getOptions = (...srcOpt: any[]) => {
   const options = {
+    preload: 'auto',
+    autoplay: true,
+    playsinline: true,
     controlBar: {
       skipButtons: {
         forward: 5,
@@ -101,7 +109,7 @@ const getOptions = (...srcOpt: any[]) => {
         seekStep: 10,
         enableModifiersForNumbers: false,
       },
-    },
+    }
   };
 
   return videojs.obj.merge(options, ...srcOpt);

@@ -291,11 +291,13 @@ watch(route, () => {
   toggleNavigation();
 });
 
+const backUrl = ref<string>("");
 // Specify hooks
 onMounted(async () => {
   window.addEventListener("keydown", key);
   if (fileStore.oldReq) {
     listing.value = fileStore.oldReq.items;
+    backUrl.value = fileStore.oldReq.url;
     updatePreview();
   }
 });
@@ -376,14 +378,14 @@ const updatePreview = async () => {
 
       for (let j = i - 1; j >= 0; j--) {
         if (mediaTypes.includes(listing.value[j].type)) {
-          previousLink.value = listing.value[j].url;
+          previousLink.value = listing.value[j].path;
           previousRaw.value = prefetchUrl(listing.value[j]);
           break;
         }
       }
       for (let j = i + 1; j < listing.value.length; j++) {
         if (mediaTypes.includes(listing.value[j].type)) {
-          nextLink.value = listing.value[j].url;
+          nextLink.value = listing.value[j].path;
           nextRaw.value = prefetchUrl(listing.value[j]);
           break;
         }
@@ -422,8 +424,12 @@ const toggleNavigation = throttle(function () {
 const close = () => {
   fileStore.updateRequest(null);
 
-  let uri = url.removeLastDir(route.path) + "/";
-  router.push({ path: uri });
+  if (backUrl.value != "")
+    router.push({ path: backUrl.value });
+  else {
+    let uri = url.removeLastDir(route.path) + "/";
+    router.push({path: uri});
+  }
 };
 
 const download = () => window.open(downloadUrl.value);

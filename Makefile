@@ -10,7 +10,8 @@ build: | build-frontend build-backend ## Build binary
 
 .PHONY: build-frontend
 build-frontend: ## Build frontend
-	$Q cd frontend && npm ci && npm run build
+#	$Q cd frontend && npm ci && npm run build
+	$Q cd frontend && npm run build
 
 .PHONY: build-backend
 build-backend: ## Build backend

@@ -21,14 +21,21 @@ import (
 )
 
 var resourceGetHandler = withUser(func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
+	includeSubDirsParam := r.URL.Query().Get("includeSubDirs")
+	includeSubDirs := false
+	if includeSubDirsParam == "true" {
+		includeSubDirs = true
+	}
+
 	file, err := files.NewFileInfo(&files.FileOptions{
-		Fs:         d.user.Fs,
-		Path:       r.URL.Path,
-		Modify:     d.user.Perm.Modify,
-		Expand:     true,
-		ReadHeader: d.server.TypeDetectionByHeader,
-		Checker:    d,
-		Content:    true,
+		Fs:             d.user.Fs,
+		Path:           r.URL.Path,
+		Modify:         d.user.Perm.Modify,
+		Expand:         true,
+		ReadHeader:     d.server.TypeDetectionByHeader,
+		Checker:        d,
+		Content:        true,
+		IncludeSubDirs: includeSubDirs,
 	})
 	if err != nil {
 		return errToStatus(err), err

@@ -1,6 +1,6 @@
 <template>
   <div
-    class="item"
+    :class="{ 'item': true, 'dir-item': isDir }"
     role="button"
     tabindex="0"
     :draggable="isDraggable"
@@ -16,7 +16,7 @@
   >
     <div>
       <img
-        v-if="!readOnly && type === 'image' && isThumbsEnabled"
+        v-if="!readOnly && (type === 'image' || type === 'video') && isThumbsEnabled"
         v-lazy="thumbnailUrl"
       />
       <i v-else class="material-icons"></i>
@@ -63,6 +63,7 @@ const props = defineProps<{
   index: number;
   readOnly?: boolean;
   path?: string;
+  random: number;
 }>();
 
 const authStore = useAuthStore();
@@ -271,7 +272,7 @@ const click = (event: Event | KeyboardEvent) => {
 };
 
 const open = () => {
-  router.push({ path: props.url });
+  router.push({ path: props.path });
 };
 
 const getExtension = (fileName: string): string => {

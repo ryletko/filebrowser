@@ -251,6 +251,7 @@
               v-bind:modified="item.modified"
               v-bind:type="item.type"
               v-bind:size="item.size"
+              v-bind:random="item.random"
               readOnly
             >
             </item>

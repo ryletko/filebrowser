@@ -9,6 +9,7 @@ interface ResourceBase {
   isSymlink: boolean;
   type: ResourceType;
   url: string;
+  random: number;
 }
 
 interface Resource extends ResourceBase {

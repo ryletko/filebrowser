@@ -171,6 +171,12 @@ func (s *Service) Resize(ctx context.Context, in io.Reader, width, height int, o
 		return err
 	}
 
+	//fmt.Printf("width: %d, height: %d\n", img.Bounds().Dx(), img.Bounds().Dy())
+	if height == 0 {
+		height = int((float32(width) / float32(img.Bounds().Dx())) * float32(img.Bounds().Dy()))
+		// fmt.Printf("width: %d, height: %d\n", width, height)
+	}
+
 	switch config.resizeMode {
 	case ResizeModeFill:
 		img = imaging.Fill(img, width, height, imaging.Center, config.quality.resampleFilter())

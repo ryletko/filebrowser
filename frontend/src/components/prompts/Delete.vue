@@ -48,9 +48,11 @@ export default {
       "selectedCount",
       "req",
       "selected",
-      "currentPrompt",
     ]),
     ...mapWritableState(useFileStore, ["reload"]),
+    ...mapState(useLayoutStore, [
+       "currentPrompt"
+    ])
   },
   methods: {
     ...mapActions(useLayoutStore, ["closeHovers"]),
@@ -76,13 +78,13 @@ export default {
 
         let promises = [];
         for (let index of this.selected) {
-          promises.push(api.remove(this.req.items[index].url));
+          promises.push(api.remove("/files" + this.req.items[index].path)); // concat c path для того чтобы работало в sub dir
         }
 
         await Promise.all(promises);
         buttons.success("delete");
         this.reload = true;
-      } catch (e) {
+      } catch (e) {S
         buttons.done("delete");
         this.$showError(e);
         if (this.isListing) this.reload = true;

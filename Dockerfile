@@ -16,4 +16,6 @@ EXPOSE 80
 COPY docker_config.json /.filebrowser.json
 COPY filebrowser /filebrowser
 
+RUN apk add libc6-compat openrc python3 py3-pip bash ffmpeg 
+
 ENTRYPOINT [ "/filebrowser" ]

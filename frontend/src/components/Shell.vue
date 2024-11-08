@@ -124,7 +124,7 @@ export default {
       this.$refs.scrollable.scrollTop = this.$refs.scrollable.scrollHeight;
     },
     focus: function () {
-      this.$refs.input.focus();
+    //  this.$refs.input.focus();
     },
     historyUp() {
       if (this.historyPos > 0) {

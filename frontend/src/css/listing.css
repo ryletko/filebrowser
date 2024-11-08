@@ -46,7 +46,8 @@ html[dir="rtl"] #listing {
 }
 
 #listing .item .size,
-#listing .item .modified {
+#listing .item .modified
+#listing .item .random {
   font-size: 0.9em;
 }
 
@@ -105,9 +106,9 @@ html[dir="rtl"] #listing {
     0 1px 2px rgba(0, 0, 0, 0.24) !important;
 }
 
-#listing.mosaic .header {
-  display: none;
-}
+/*#listing.mosaic .header {*/
+/*  display: none;*/
+/*}*/
 
 #listing.mosaic .item div:first-of-type {
   width: 5em;
@@ -119,7 +120,7 @@ html[dir="rtl"] #listing {
 
 #listing.mosaic.gallery .item div:first-of-type {
   width: 100%;
-  height: 12em;
+  /*height: 12em;*/
 }
 
 #listing.mosaic.gallery .item div:last-of-type {
@@ -130,6 +131,10 @@ html[dir="rtl"] #listing {
   text-align: center;
 }
 
+#listing.mosaic.gallery .item.dir-item div:last-of-type  {
+  position: initial;
+}
+
 #listing.mosaic.gallery .item[data-type="image"] div:last-of-type {
   color: white;
   background: linear-gradient(#0000, #0009);
@@ -138,8 +143,12 @@ html[dir="rtl"] #listing {
 #listing.mosaic.gallery .item i {
   width: 100%;
   margin-right: 0;
-  font-size: 8em;
+  font-size: 6em;
   text-align: center;
+}
+
+#listing.mosaic.gallery .item.dir-item i  {
+  width: auto;
 }
 
 #listing.mosaic.gallery .item img {
@@ -148,7 +157,8 @@ html[dir="rtl"] #listing {
 }
 
 #listing.gallery .size,
-#listing.gallery .modified {
+#listing.gallery .modified
+#listing.gallery .random {
   display: none;
 }
 
@@ -203,25 +213,44 @@ html[dir="rtl"] #listing {
   width: 25%;
 }
 
-#listing .item.header {
-  display: none !important;
-  background-color: var(--iconTertiary);
-}
+/*#listing .item.header {*/
+/*  display: none !important;*/
+/*  background-color: var(--iconTertiary);*/
+/*}*/
 
-#listing.list .header i {
-  font-size: 1.5em;
-  vertical-align: middle;
-  margin-left: 0.2em;
-}
-
-#listing.list .item.header {
+#listing .header-item.header {
   display: flex !important;
   background: var(--background);
   z-index: 999;
   padding: 0.85em;
   border: 0;
-  border-bottom: 1px solid var(--borderPrimary);
+  /*border-bottom: 1px solid var(--borderPrimary);*/
 }
+
+#listing .header-item p {
+  display: inline;
+  margin: 0 3px;
+}
+
+#listing .header span.sorting-dir {
+  font-size: 18px;
+  opacity: 0;
+  transition: 0.1s ease all;
+}
+
+#listing .header p:hover span.sorting-dir,
+#listing .header .active span.sorting-dir {
+  opacity: 1;
+}
+
+/*#listing.list .item.header {*/
+/*  display: flex !important;*/
+/*  background: var(--background);*/
+/*  z-index: 999;*/
+/*  padding: 0.85em;*/
+/*  border: 0;*/
+/*  border-bottom: 1px solid var(--borderPrimary);*/
+/*}*/
 
 #listing.list .item.header > div:first-child {
   width: 0;
@@ -254,15 +283,15 @@ html[dir="rtl"] #listing {
   vertical-align: middle;
 }
 
-#listing.list .header i {
-  opacity: 0;
-  transition: 0.1s ease all;
-}
+/*#listing.list .header i {*/
+/*  opacity: 0;*/
+/*  transition: 0.1s ease all;*/
+/*}*/
 
-#listing.list .header p:hover i,
-#listing.list .header .active i {
-  opacity: 1;
-}
+/*#listing.list .header p:hover i,*/
+/*#listing.list .header .active i {*/
+/*  opacity: 1;*/
+/*}*/
 
 #listing.list .item.header .active {
   font-weight: bold;

@@ -47,6 +47,13 @@ export default defineConfig(({ command }) => {
       resolve,
       base: "",
       build: {
+        // штуки чтобы отключить минификацию
+        // minify: false,
+        // terserOptions: {
+        //   compress: false,
+        //   mangle: false,
+        // },
+        // ---------------------------------
         rollupOptions: {
           input: {
             index: path.resolve(__dirname, "./public/index.html"),

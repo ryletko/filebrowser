@@ -42,7 +42,9 @@
     "update": "Update",
     "upload": "Upload",
     "openFile": "Open file",
-    "discardChanges": "Discard"
+    "discardChanges": "Discard",
+    "refresh": "Refresh",
+    "includeSubDirs": "Sub Dirs"
   },
   "download": {
     "downloadFile": "Download File",
@@ -72,9 +74,11 @@
     "name": "Name",
     "size": "Size",
     "sortByLastModified": "Sort by last modified",
+    "sortByRandom": "Sort by random",
     "sortByName": "Sort by name",
     "sortBySize": "Sort by size",
-    "noPreview": "Preview is not available for this file."
+    "noPreview": "Preview is not available for this file.",
+    "random": "Random"
   },
   "help": {
     "click": "select file or directory",

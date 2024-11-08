@@ -57,12 +57,18 @@ export function download(format: any, ...files: string[]) {
   let url = `${baseURL}/api/raw`;
 
   if (files.length === 1) {
-    url += removePrefix(files[0]) + "?";
+    if (files[0].startsWith("http"))
+      url += removePrefix(files[0]) + "?";
+    else
+      url += files[0] + "?";
   } else {
     let arg = "";
 
     for (const file of files) {
-      arg += removePrefix(file) + ",";
+      if (file.startsWith("http"))
+        arg += removePrefix(file) + ",";
+      else
+        arg += file + ",";
     }
 
     arg = arg.substring(0, arg.length - 1);

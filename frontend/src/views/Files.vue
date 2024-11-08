@@ -142,6 +142,8 @@ const fetchData = async () => {
   let url = route.path;
   if (url === "") url = "/";
   if (url[0] !== "/") url = "/" + url;
+  if (fileStore.includeSubDirs)
+    url = url + "?includeSubDirs=true"
   try {
     const res = await api.fetch(url);
 

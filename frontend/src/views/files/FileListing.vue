@@ -3,6 +3,51 @@
     <header-bar showMenu showLogo>
       <search />
       <title />
+      <div v-if="isMobile">
+        <action
+          v-if="headerButtons.rename"
+          icon="mode_edit"
+          :label="t('buttons.rename')"
+          show="rename"
+        />
+        <action
+          v-if="headerButtons.copy"
+          icon="content_copy"
+          :label="t('buttons.copyFile')"
+          show="copy"
+        />
+        <action
+          v-if="headerButtons.move"
+          icon="forward"
+          :label="t('buttons.moveFile')"
+          show="move"
+        />
+        <action
+          v-if="headerButtons.delete"
+          icon="delete"
+          :label="t('buttons.delete')"
+          show="delete"
+        />
+        <action
+          v-if="headerButtons.download && fileStore.selectedCount > 0"
+          icon="file_download"
+          :label="t('buttons.download')"
+          @action="download"
+          :counter="fileStore.selectedCount"
+        />
+        <action
+          v-if="fileStore.selectedCount == 0"
+          :icon="viewIcon"
+          :label="t('buttons.switchView')"
+          @action="switchView"
+        />
+        <action
+          v-if="fileStore.selectedCount == 0"
+          icon="remove_red_eye"
+          :label="t('buttons.includeSubDirs')"
+          @action="includeSubDirs"
+        />
+      </div>
       <action
         class="search-button"
         icon="search"
@@ -78,10 +123,20 @@
           :label="t('buttons.selectMultiple')"
           @action="toggleMultipleSelection"
         />
+        <action
+          icon="remove_red_eye"
+          :label="t('buttons.includeSubDirs')"
+          @action="includeSubDirs"
+        />
+        <action
+          icon="refresh"
+          :label="t('buttons.refresh')"
+          @action="refresh"
+        />
       </template>
     </header-bar>
 
-    <div v-if="isMobile" id="file-selection">
+    <div v-if="false" id="file-selection">
       <span v-if="fileStore.selectedCount > 0">
         {{ t("prompts.filesSelected", fileStore.selectedCount) }}
       </span>
@@ -161,12 +216,12 @@
         :class="authStore.user?.viewMode ?? ''"
       >
         <div>
-          <div class="item header">
+          <div class="header-item header">
             <div></div>
             <div>
               <p
                 :class="{ active: nameSorted }"
-                class="name"
+                class="name-header"
                 role="button"
                 tabindex="0"
                 @click="sort('name')"
@@ -174,12 +229,12 @@
                 :aria-label="t('files.sortByName')"
               >
                 <span>{{ t("files.name") }}</span>
-                <i class="material-icons">{{ nameIcon }}</i>
+                <span class="sorting-dir material-icons">{{ nameIcon }}</span>
               </p>
 
               <p
                 :class="{ active: sizeSorted }"
-                class="size"
+                class="size-header"
                 role="button"
                 tabindex="0"
                 @click="sort('size')"
@@ -187,11 +242,11 @@
                 :aria-label="t('files.sortBySize')"
               >
                 <span>{{ t("files.size") }}</span>
-                <i class="material-icons">{{ sizeIcon }}</i>
+                <span class="sorting-dir material-icons">{{ sizeIcon }}</span>
               </p>
               <p
                 :class="{ active: modifiedSorted }"
-                class="modified"
+                class="modified-header"
                 role="button"
                 tabindex="0"
                 @click="sort('modified')"
@@ -199,7 +254,19 @@
                 :aria-label="t('files.sortByLastModified')"
               >
                 <span>{{ t("files.lastModified") }}</span>
-                <i class="material-icons">{{ modifiedIcon }}</i>
+                <span class="sorting-dir material-icons">{{ modifiedIcon }}</span>
+              </p>
+              <p
+                :class="{ active: randomSorted }"
+                class="random-header"
+                role="button"
+                tabindex="0"
+                @click="sort('random')"
+                :title="t('files.sortByRandom')"
+                :aria-label="t('files.sortByRandom')"
+              >
+                <span>{{ t("files.random") }}</span>
+                <span class="sorting-dir material-icons">{{ randomIcon }}</span>
               </p>
             </div>
           </div>
@@ -220,6 +287,7 @@
             v-bind:type="item.type"
             v-bind:size="item.size"
             v-bind:path="item.path"
+            v-bind:random="item.random"
           >
           </item>
         </div>
@@ -237,6 +305,7 @@
             v-bind:type="item.type"
             v-bind:size="item.size"
             v-bind:path="item.path"
+            v-bind:random="item.random"
           >
           </item>
         </div>
@@ -338,6 +407,10 @@ const modifiedSorted = computed(() =>
   fileStore.req ? fileStore.req.sorting.by === "modified" : false
 );
 
+const randomSorted = computed(() =>
+  fileStore.req ? fileStore.req.sorting.by === "random" : false
+);
+
 const ascOrdered = computed(() =>
   fileStore.req ? fileStore.req.sorting.asc : false
 );
@@ -385,6 +458,14 @@ const sizeIcon = computed(() => {
 
 const modifiedIcon = computed(() => {
   if (modifiedSorted.value && ascOrdered.value) {
+    return "arrow_downward";
+  }
+
+  return "arrow_upward";
+});
+
+const randomIcon = computed(() => {
+  if (randomSorted.value && ascOrdered.value) {
     return "arrow_downward";
   }
 
@@ -442,7 +523,8 @@ watch(req, () => {
   }
 });
 
-onMounted(() => {
+onMounted(async () => {
+
   // Check the columns size for the first time.
   colunmsResize();
 
@@ -462,6 +544,7 @@ onMounted(() => {
   document.addEventListener("dragenter", dragEnter);
   document.addEventListener("dragleave", dragLeave);
   document.addEventListener("drop", drop);
+
 });
 
 onBeforeUnmount(() => {
@@ -820,6 +903,10 @@ const sort = async (by: string) => {
     if (modifiedIcon.value === "arrow_upward") {
       asc = true;
     }
+  } else if (by === "random") {
+    if (randomIcon.value === "arrow_upward") {
+      asc = true;
+    }
   }
 
   try {
@@ -845,6 +932,40 @@ const toggleMultipleSelection = () => {
   layoutStore.closeHovers();
 };
 
+const refresh = () => {
+  fileStore.reload = true;
+}
+
+const includeSubDirsValue = ref<boolean>(false);
+
+const includeSubDirs = async (forcedValue?: boolean, reload?: boolean) => {
+  // if (authStore.user?.id) {
+  //
+  //   if (forcedValue != null)
+  //     includeSubDirsValue.value = forcedValue;
+  //   else
+  //     includeSubDirsValue.value = !includeSubDirsValue.value; // TODO это я сделал на крайняк, потому что не смог сохранить user data в authStore
+  //
+  //   // @ts-ignore
+  //   const data = {
+  //     id: authStore.user?.id,
+  //     includeSubDirs: includeSubDirsValue.value
+  //   };
+  //
+  //   // @ts-ignore
+  //   await users.update(data, ["includeSubDirs"]).catch($showError);
+  //
+  //   // @ts-ignore
+  //   authStore.updateUser(data);
+  // }
+
+  // if (reload == null || reload == true)
+
+  includeSubDirsValue.value = !includeSubDirsValue.value; // TODO это я сделал на крайняк, потому что не смог сохранить user data в authStore
+  fileStore.includeSubDirs = includeSubDirsValue.value;
+  fileStore.reload = true;
+}
+
 const windowsResize = throttle(() => {
   colunmsResize();
   width.value = window.innerWidth;
@@ -866,7 +987,7 @@ const download = () => {
     fileStore.selectedCount === 1 &&
     !fileStore.req.items[fileStore.selected[0]].isDir
   ) {
-    api.download(null, fileStore.req.items[fileStore.selected[0]].url);
+    api.download(null, fileStore.req.items[fileStore.selected[0]].path);
     return;
   }
 
@@ -879,7 +1000,7 @@ const download = () => {
 
       if (fileStore.selectedCount > 0 && fileStore.req !== null) {
         for (let i of fileStore.selected) {
-          files.push(fileStore.req.items[i].url);
+          files.push(fileStore.req.items[i].path);
         }
       } else {
         files.push(route.path);
