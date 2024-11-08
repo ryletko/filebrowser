@@ -12,6 +12,16 @@
 
 filebrowser provides a file managing interface within a specified directory and it can be used to upload, delete, preview, rename and edit your files. It allows the creation of multiple users and each user can have its own directory. It can be used as a standalone app.
 
+## My improvements in comparison to the original repository
+- added video preview and video thumbnails
+- added a feature that lists all files of subdirectories in one list with preview support
+- instagram feed style for gallery view
+- added random sorting of files in the list and preview
+- optimized filelist icons and buttons for mobile view
+- optimized shell view for mobile devices and allowed selecting text in shell container
+- fixed delete-dialog issues
+- other minor improvements
+
 ## Demo
 
 url: https://demo.filebrowser.org/
